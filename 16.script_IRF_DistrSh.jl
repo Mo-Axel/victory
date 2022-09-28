@@ -22,7 +22,7 @@ sh_size = 3   # shock size, in multiples of standard deviations
 # include Functions
 #-------------------------------------------------------------
 #cd("$(pwd())/Dropbox/Heterogeneity/Software/KS_Simulation/")
-readDir = "$(pwd())/CB-fVAR/OVERALL/Functions/"
+readDir = "$(pwd())/Functions/"
 include(readDir *"vech.jl");
 include(readDir *"logSpline_Procedures.jl");
 include(readDir *"VAR_Procedures.jl");
@@ -36,11 +36,11 @@ include(readDir *"IRF_Procedures.jl")
 # choose specification files
 #-------------------------------------------------------------
 nfVARSpec = "10tc"
-nModSpec  = "4"
+nModSpec  = "1"
 nMCMCSpec = "1"
 modName   = "SS"  # VAR or SS
 
-specDir   = "$(pwd())/CB-fVAR/OVERALL/SpecFiles/"
+specDir   = "$(pwd())/SpecFiles/"
 include(specDir * "/fVARspec" * nfVARSpec * ".jl")
 include(specDir * "/" * modName * "spec" * nModSpec * ".jl")
 include(specDir * "/" * modName * "MCMCspec" * nMCMCSpec * ".jl")
@@ -49,21 +49,21 @@ include(specDir * "/" * modName * "MCMCspec" * nMCMCSpec * ".jl")
 # load aggregate data
 #-------------------------------------------------------------
 juliaversion = 15
-agg_data, period_agg = loadaggdata(SampleStart,SampleEnd,juliaversion)
+agg_data, period_agg,~ = loadaggdata(SampleStart,SampleEnd,juliaversion)
 n_agg = size(agg_data)[2]
 
 #-------------------------------------------------------------
 # Load coefficients from density estimation
 #-------------------------------------------------------------
 sNameLoadDir = "fVAR" * nfVARSpec
-loaddir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sNameLoadDir *"/";
+loaddir  = "$(pwd())/results/" * sNameLoadDir *"/";
 knots_all = CSV.read(loaddir * sNameLoadDir * "_knots_all.csv", DataFrame, header = true);
 
 knots_all = Array(knots_all)'
 ii=getindex.(findall(K_vec.-K.==0),[1 2])[1] # find index ii where K==K_vec
 knots = knots_all[quant_sel[ii,:].==1]
 
-PhatDensCoef_factor, MDD_term1, VinvLam_all, period_Dens, PhatDensCoef_lambda, PhatDensCoef_mean, PhatDensCoef_mean_allt = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
+PhatDensCoef_factor, MDD_term1, VinvLam_all, period_Dens, PhatDensCoef_lambda, PhatDensCoef_mean = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
 n_cross = size(PhatDensCoef_factor)[2]
 
 #-------------------------------------------------------------
@@ -71,7 +71,7 @@ n_cross = size(PhatDensCoef_factor)[2]
 #-------------------------------------------------------------
 
 sName    = "fVAR" * nfVARSpec * "_" * modName * nModSpec * "_" * "MCMC" * nMCMCSpec;
-loadDir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sName *"/";
+loadDir  = "$(pwd())/results/" * sName *"/";
 
 PHIpdraw     = load(loadDir * sName * "_PostDraws.jld", "PHIpdraw")
 SIGMAtrpdraw = load(loadDir * sName * "_PostDraws.jld", "SIGMAtrpdraw")
@@ -82,7 +82,7 @@ SIGMAtrpmean = load(loadDir * sName * "_PostMeans.jld", "SIGMAtrpmean")
 # Create a grid for the rotation q
 #-------------------------------------------------------------
 
-lenq = 5000 # out of 500 rotations, find the one that maximizes the Gini coefficients
+lenq = 500 # out of 500 rotations, find the one that maximizes the Gini coefficients
 #Random.seed!(100000*seedindx+10*t+3+seedoffset)
 qgrid = randn(lenq,n_cross)
 
@@ -112,7 +112,7 @@ maxGini_qstar = qgrid[getindex.(findall(Gini_vec.-maximum(Gini_vec).==0),[1 2])[
 
 # Recompute the IRFs
 YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpmean, SIGMAtrpmean, maxGini_qstar, sh_size, H, xgrid)
-savedir = "$(pwd())/CB-fVAR/OVERALL/results/" * sName *"/";
+savedir = "$(pwd())/results/" * sName *"/";
 try mkdir(savedir) catch; end
 CSV.write(savedir * sName * "_IRF_PhatDens_DistrSh_pmean.csv", DataFrame(PhatDens_IRF,:auto))
 CSV.write(savedir * sName * "_IRF_YY_DistrSh_pmean.csv", DataFrame(YY_IRF,:auto))
@@ -150,8 +150,13 @@ for pp = 1:n_subseq
     try
         YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpdraw[pp*n_every,:,:], SIGMAtrpdraw[pp*n_every,:,:], maxGini_qstar, sh_size, H, xgrid)
     catch
-        YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpdraw[(pp-1)*n_every,:,:], SIGMAtrpdraw[(pp-1)*n_every,:,:], maxGini_qstar, sh_size, H, xgrid)
-        errort = errort + 1
+        try
+            YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpdraw[(pp-1)*n_every,:,:], SIGMAtrpdraw[(pp-1)*n_every,:,:], maxGini_qstar, sh_size, H, xgrid)
+            errort = errort + 1
+        catch
+            YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpdraw[(pp-2)*n_every,:,:], SIGMAtrpdraw[(pp-2)*n_every,:,:], maxGini_qstar, sh_size, H, xgrid)
+            errort = errort + 1
+        end
     end
 
     CSV.write(savedir * sName * "_IRF_PhatDens_DistrSh" * "_" * string(pp) * ".csv", DataFrame(PhatDens_IRF,:auto))

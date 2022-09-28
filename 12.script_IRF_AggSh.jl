@@ -22,7 +22,7 @@ sh_id = 1 # sh_id = 1: TFP shock, sh_id = 2: GDP shock, sh_id = 3: Employment sh
 # include Functions
 #-------------------------------------------------------------
 #cd("$(pwd())/Dropbox/Heterogeneity/Software/KS_Simulation/")
-readDir = "$(pwd())/CB-fVAR/OVERALL/Functions/"
+readDir = "$(pwd())/Functions/"
 include(readDir *"vech.jl");
 include(readDir *"logSpline_Procedures.jl");
 include(readDir *"VAR_Procedures.jl");
@@ -35,11 +35,11 @@ include(readDir *"IRF_Procedures.jl")
 # choose specification files
 #-------------------------------------------------------------
 nfVARSpec = "10tc"
-nModSpec  = "4"
+nModSpec  = "1"
 nMCMCSpec = "1"
 modName   = "SS"  # VAR or SS
 
-specDir   = "$(pwd())/CB-fVAR/OVERALL/SpecFiles"
+specDir   = "$(pwd())/SpecFiles"
 include(specDir * "/fVARspec" * nfVARSpec * ".jl")
 include(specDir * "/" * modName * "spec" * nModSpec * ".jl")
 include(specDir * "/" * modName * "MCMCspec" * nMCMCSpec * ".jl")
@@ -55,7 +55,7 @@ n_agg = size(agg_data)[2]
 # Load coefficients from density estimation
 #-------------------------------------------------------------
 sNameLoadDir = "fVAR" * nfVARSpec
-loaddir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sNameLoadDir *"/";
+loaddir  = "$(pwd())/results/" * sNameLoadDir *"/";
 
 knots_all = CSV.read(loaddir * sNameLoadDir * "_knots_all.csv", DataFrame, header = true);
 knots_all = Array(knots_all)'
@@ -63,7 +63,7 @@ knots_all = Array(knots_all)'
 ii = getindex.(findall(K_vec.-K.==0),[1 2])[1] # find index ii where K==K_vec
 knots = knots_all[quant_sel[ii,:].==1]
 
-PhatDensCoef_factor, MDD_term1, VinvLam_all, period_Dens, PhatDensCoef_lambda, PhatDensCoef_mean, PhatDensCoef_mean_allt = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
+PhatDensCoef_factor, MDD_term1, VinvLam_all, period_Dens, PhatDensCoef_lambda, PhatDensCoef_mean = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
 n_cross = size(PhatDensCoef_factor)[2]
 
 #-------------------------------------------------------------
@@ -71,7 +71,7 @@ n_cross = size(PhatDensCoef_factor)[2]
 #-------------------------------------------------------------
 
 sName    = "fVAR" * nfVARSpec * "_" * modName * nModSpec * "_" * "MCMC" * nMCMCSpec;
-loadDir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sName *"/";
+loadDir  = "$(pwd())/results/" * sName *"/";
 
 PHIpdraw     = load(loadDir * sName * "_PostDraws.jld", "PHIpdraw")
 SIGMAtrpdraw = load(loadDir * sName * "_PostDraws.jld", "SIGMAtrpdraw")
@@ -93,7 +93,7 @@ println("")
 
 YY_IRF,PhatDens_IRF,~ = IRF_qSh(PHIpmean, SIGMAtrpmean, qstar, sh_size, H, xgrid)
 
-savedir = "$(pwd())/CB-fVAR/OVERALL/results/" * sName *"/";
+savedir = "$(pwd())/results/" * sName *"/";
 try mkdir(savedir) catch; end
 CSV.write(savedir * sName * "_IRF_PhatDens_AggSh"*string(sh_id)*"_pmean.csv", DataFrame(PhatDens_IRF,:auto))
 CSV.write(savedir * sName * "_IRF_YY_AggSh"*string(sh_id)*"_pmean.csv", DataFrame(YY_IRF,:auto))
@@ -119,9 +119,15 @@ for pp = 1:n_subseq
     try
         YY_IRF,PhatDens_IRF = IRF_qSh(PHIpdraw[pp*n_every,:,:], SIGMAtrpdraw[pp*n_every,:,:], qstar, sh_size, H, xgrid)
     catch
-        YY_IRF,PhatDens_IRF = IRF_qSh(PHIpdraw[(pp-1)*n_every,:,:], SIGMAtrpdraw[(pp-1)*n_every,:,:], qstar, sh_size, H, xgrid)
-        println("errort domainError: $errort")
-        errort = errort + 1
+        try
+            YY_IRF,PhatDens_IRF = IRF_qSh(PHIpdraw[(pp-1)*n_every,:,:], SIGMAtrpdraw[(pp-1)*n_every,:,:], qstar, sh_size, H, xgrid)
+            println("errort domainError: $errort")
+            errort = errort + 1
+        catch
+            YY_IRF,PhatDens_IRF = IRF_qSh(PHIpdraw[(pp-2)*n_every,:,:], SIGMAtrpdraw[(pp-1)*n_every,:,:], qstar, sh_size, H, xgrid)
+            println("errort domainError: $errort")
+            errort = errort + 1
+        end
     end
     CSV.write(savedir * sName * "_IRF_PhatDens_AggSh" * string(sh_id) * "_" * string(pp) * ".csv", DataFrame(PhatDens_IRF,:auto))
     CSV.write(savedir * sName * "_IRF_YY_AggSh" * string(sh_id) * "_" * string(pp) * ".csv", DataFrame(YY_IRF,:auto))

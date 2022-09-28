@@ -15,7 +15,7 @@ using Random
 #-------------------------------------------------------------
 # include Functions
 #-------------------------------------------------------------
-readDir = "$(pwd())/CB-fVAR/OVERALL/Functions/"
+readDir = "$(pwd())/Functions/"
 include(readDir *"vech.jl");
 include(readDir *"VAR_Procedures.jl");
 include(readDir *"SS_Procedures.jl");
@@ -25,9 +25,9 @@ include(readDir *"Loaddata.jl");
 # choose specification files
 #-------------------------------------------------------------
 nfVARSpec = "10tc"
-nSSSpec   = "4"
+nSSSpec   = "1"
 nSSMCMCSpec= "1"
-specDir   =  "$(pwd())/CB-fVAR/OVERALL/SpecFiles/"
+specDir   =  "$(pwd())/SpecFiles/"
 include(specDir * "/fVARspec" * nfVARSpec * ".jl")
 include(specDir * "/SSspec" * nSSSpec * ".jl")
 include(specDir * "/SSMCMCspec" * nSSMCMCSpec * ".jl")
@@ -43,9 +43,9 @@ n_agg = size(agg_data)[2]
 # Load coefficients from density estimation
 #-------------------------------------------------------------
 sNameLoadDir = "fVAR" * nfVARSpec
-loaddir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sNameLoadDir *"/";
+loaddir  = "$(pwd())/results/" * sNameLoadDir *"/";
 
-PhatDensCoef_factor, MDD_GoF, VinvLam_all, period_Dens_ind, ~, ~, ~ = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
+PhatDensCoef_factor, MDD_GoF, VinvLam_all, period_Dens_ind, ~, ~ = loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,juliaversion)
 n_cross = size(PhatDensCoef_factor)[2]
 
 #-------------------------------------------------------------
@@ -141,7 +141,7 @@ likidraw     = likidraw[nburn+1:nsim,:];
 #-------------------------------------------------------------
 
 sName    = "fVAR" * nfVARSpec * "_SS" * nSSSpec*"_MCMC" * nSSMCMCSpec
-savedir  = "$(pwd())/CB-fVAR/OVERALL/results/" * sName *"/";
+savedir  = "$(pwd())/results/" * sName *"/";
 try mkdir(savedir) catch; end
 save(savedir * sName* "_PostDraws.jld", "PHIpdraw", PHIpdraw, "SIGMAtrpdraw", SIGMAtrpdraw)
 save(savedir * sName* "_StateDraws.jld", "statepdraw", statepdraw)

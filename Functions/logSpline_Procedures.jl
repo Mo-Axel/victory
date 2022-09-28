@@ -71,6 +71,7 @@ function lnpdfNormalize(coef,knots,lb=0,ub=10)
     return lnnorm_out
 end
 
+
 function lnpdfNormalize_unrate(coef,knots,unrate,lb=0,ub=10)
     # this procedure generates the normalization constant for the density
     # coef is T*K

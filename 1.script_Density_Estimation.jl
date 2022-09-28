@@ -13,32 +13,32 @@ using LinearAlgebra
 # include Functions
 #-------------------------------------------------------------
 #cd("$(pwd())/Dropbox/Heterogeneity/Software/Empirical_Analysis/")
-readDir = "$(pwd())/CB-fVAR/OVERALL/Functions/"
+readDir = "$(pwd())/Functions/"
 include(readDir *"logSpline_Procedures.jl");
 
 #-------------------------------------------------------------
 # load data
 #-------------------------------------------------------------
-dataDir = "$(pwd())/CB-fVAR/OVERALL/Data/"
+dataDir = "$(pwd())/Data/"
 
-year_data     = CSV.read(dataDir * "No_superrate.csv", DataFrame, header = true);
-li_ty_data   = CSV.read(dataDir * "C_3_line.csv", DataFrame, header = true);
+#year_data     = CSV.read(dataDir * "No_superrate.csv", DataFrame, header = true);
+li_ty_data   = CSV.read(dataDir * "cross_all.csv", DataFrame, header = true);
 
 
 period_year = convert(Array, year_data[:,1])
-li_ty_detrended = convert(Array,li_ty_data[:,3])
+li_ty= convert(Array,li_ty_data[:,3])
 li_ty_t = convert(Array,li_ty_data[:,2])
-Tend       = length(period_year)
+Tend       = length(unique(li_ty_t))
 
 #-------------------------------------------------------------
 # choose specification file
 #-------------------------------------------------------------
 nfVARSpec = "10tc"
-specDir   = "$(pwd())/CB-fVAR/OVERALL/SpecFiles/"
+specDir   = "$(pwd())/SpecFiles/"
 include(specDir * "/fVARspec" * nfVARSpec * ".jl")
 
 # subsequently use the same knots regardless of sample size N,T
-knots_all = quantile(li_ty_detrended, quant_vec)
+knots_all = quantile(li_ty, quant_vec)
 
 #-------------------------------------------------------------
 # log spline density estimation over K and t
@@ -155,13 +155,13 @@ for ii = 1:K_vec_n
 
     end
 
-    # seasonality adjustment
-    nq = 1 # quarterly data
-    start_season = 1 # starting from 1989Q1 (first quarter)
-    (PhatDensCoef_adj, PhatDensCoef_mean, PhatDensCoef_mean_allt) = seasonality_adj(PhatDensCoef, nq, start_season, Tend)
+#     # seasonality adjustment
+#     nq = 1 # quarterly data
+#     start_season = 1 # starting from 1989Q1 (first quarter)
+#     (PhatDensCoef_adj, PhatDensCoef_mean, PhatDensCoef_mean_allt) = seasonality_adj(PhatDensCoef, nq, start_season, Tend)
 
     # compress coefficients, ~ = PhatDensCoef_mean
-    (PhatDensCoef_factor, PhatDensCoef_lambda, ~ ) = coefCompress(PhatDensCoef_adj)
+    (PhatDensCoef_factor, PhatDensCoef_lambda, PhatDensCoef_mean) = coefCompress(PhatDensCoef)
     Ktilde = size(PhatDensCoef_factor)[2]
     println("----------------")
     println("Compression Step")
@@ -180,7 +180,7 @@ for ii = 1:K_vec_n
     # save results
     sNameDir  = "fVAR" * nfVARSpec
     sNameFile = "K" * string(K) * "_fVAR" * nfVARSpec
-    savedir = "$(pwd())/CB-fVAR/OVERALL/results/" * sNameDir *"/";
+    savedir = "$(pwd())/results/" * sNameDir *"/";
     try mkdir(savedir) catch; end
     CSV.write(savedir * sNameFile * "_DensityPeriod.csv", DataFrame(Period_all,:auto))
     CSV.write(savedir * sNameFile * "_PhatDensValue.csv", DataFrame(PhatDensValue,:auto))
@@ -188,7 +188,7 @@ for ii = 1:K_vec_n
     CSV.write(savedir * sNameFile * "_PhatDensCoef_factor.csv", DataFrame(PhatDensCoef_factor,:auto))
     CSV.write(savedir * sNameFile * "_PhatDensCoef_lambda.csv", DataFrame(PhatDensCoef_lambda,:auto))
     CSV.write(savedir * sNameFile * "_PhatDensCoef_mean.csv", DataFrame(PhatDensCoef_mean,:auto))
-    CSV.write(savedir * sNameFile * "_PhatDensCoef_mean_allt.csv", DataFrame(PhatDensCoef_mean_allt,:auto))
+    #CSV.write(savedir * sNameFile * "_PhatDensCoef_mean_allt.csv", DataFrame(PhatDensCoef_mean_allt,:auto))
     CSV.write(savedir * sNameFile * "_Vinv_all.csv", DataFrame(Vinv_all,:auto))
     CSV.write(savedir * sNameFile * "_N_all.csv", DataFrame(N_all,:auto))
     CSV.write(savedir * sNameFile * "_N_details.csv", DataFrame(N_details,:auto))
@@ -199,7 +199,7 @@ end
 
 sNameDir  = "fVAR" * nfVARSpec;
 sNameFile = "fVAR" * nfVARSpec;
-savedir = "$(pwd())/CB-fVAR/OVERALL/results/" * sNameDir *"/";
+savedir = "$(pwd())/results/" * sNameDir *"/";
 try mkdir(savedir) catch; end
 CSV.write(savedir * sNameFile * "_MDD_GoF_sum.csv", DataFrame(MDD_GoF_sum,:auto))
 CSV.write(savedir * sNameFile * "_knots_all.csv", DataFrame(knots_all',:auto))

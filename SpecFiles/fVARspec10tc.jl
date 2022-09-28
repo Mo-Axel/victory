@@ -67,34 +67,52 @@ K_vec_n   = length(K_vec)
 K_vec     = K_vec + ones(Int8, K_vec_n)
 
 # specify grid that is used to evaluate p(x)
-xmin = 0
-xmax = 1
-xn = 101
+xmin = -16
+xmax = 13
+xn = 291
 xgrid = range(xmin, stop=xmax, length=xn);
 
 const TopCodeFlag = 0
 
-# Option 3: cubic - cubic - linear, constructed from the right
+# Option 1: linear - cubic - cubic, constructed from the left
 ##############################################################
 function basis_logspline(x,knots)
     # this procedure evaluates the spline basis functions
     # at the n*1 vector x, given the (K-1)*1 vector of knots
     # output is  n*K
-    UpperBound = 1
 
-    x_dim  = length(x);
-    K      = length(knots)+1;
-    basis_fcn = zeros(x_dim,K);
-
-    for j = 1:x_dim
-
-        basis_fcn[j,K] = max(UpperBound-x[j],0);
-        for i=(K-1):-1:1
-             basis_fcn[j,i] = (max( (knots[i]-x[j]) , 0)^3);
-        end
-
+    x_dim  = length(x)
+    if x_dim == 1
+        x=[x]
     end
 
-    return basis_fcn
+    basis_fcn = copy(x)
 
+    # cubic part
+    for i=1:length(knots)
+        basis_fcn = [basis_fcn  max.((x .- ones(x_dim)*knots[i]),zeros(x_dim)).^3]
+    end
+    return basis_fcn
 end
+# function basis_logspline(x,knots)
+#     # this procedure evaluates the spline basis functions
+#     # at the n*1 vector x, given the (K-1)*1 vector of knots
+#     # output is  n*K
+#     UpperBound = 3
+
+#     x_dim  = length(x);
+#     K      = length(knots)+1;
+#     basis_fcn = zeros(x_dim,K);
+
+#     for j = 1:x_dim
+
+#         basis_fcn[j,K] = max(UpperBound-x[j],0);
+#         for i=(K-1):-1:1
+#              basis_fcn[j,i] = (max( (knots[i]-x[j]) , 0)^3);
+#         end
+
+#     end
+
+#     return basis_fcn
+
+# end

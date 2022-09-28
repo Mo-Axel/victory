@@ -1,6 +1,6 @@
 function loadaggdata(SampleStart,SampleEnd,v)
 
-    dataDir = "$(pwd())/CB-fVAR/OVERALL/Data/"
+    dataDir = "$(pwd())/Data/"
 
     GDP_data       = CSV.read(dataDir * "gdp.csv", DataFrame, header = true); # run with version 1.5.
     Inv_data       = CSV.read(dataDir * "Inv.csv", DataFrame, header = true);
@@ -63,7 +63,7 @@ function loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,v)
     PhatDensCoef_factor = CSV.read(loaddir * sNameFile * "_PhatDensCoef_factor.csv", DataFrame, header = true);
     PhatDensCoef_lambda = CSV.read(loaddir * sNameFile * "_PhatDensCoef_lambda.csv", DataFrame, header = true);
     PhatDensCoef_mean   = CSV.read(loaddir * sNameFile * "_PhatDensCoef_mean.csv", DataFrame, header = true);
-    PhatDensCoef_mean_allt = CSV.read(loaddir * sNameFile * "_PhatDensCoef_mean_allt.csv", DataFrame, header = true);
+    #PhatDensCoef_mean_allt = CSV.read(loaddir * sNameFile * "_PhatDensCoef_mean_allt.csv", DataFrame, header = true);
     period_Dens         = CSV.read(loaddir * sNameFile * "_DensityPeriod.csv", DataFrame, header = true);
     MDD_GoF             = CSV.read(loaddir * sNameFile * "_MDD_GoF.csv", DataFrame, header = true);
     Vinv_all            = CSV.read(loaddir * sNameFile * "_Vinv_all.csv", DataFrame, header = true);
@@ -77,8 +77,8 @@ function loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,v)
     PhatDensCoef_factor = PhatDensCoef_factor[period_Dens_ind,:]
     PhatDensCoef_lambda = Array(PhatDensCoef_lambda)
     PhatDensCoef_mean   = Array(PhatDensCoef_mean)
-    PhatDensCoef_mean_allt = Array(PhatDensCoef_mean_allt)
-    PhatDensCoef_mean_allt = PhatDensCoef_mean_allt[period_Dens_ind,:]
+    #PhatDensCoef_mean_allt = Array(PhatDensCoef_mean_allt)
+    #PhatDensCoef_mean_allt = PhatDensCoef_mean_allt[period_Dens_ind,:]
     MDD_GoF             = Array(MDD_GoF)
     MDD_GoF             = MDD_GoF[period_Dens_ind]
     N_all               = Array(N_all)
@@ -98,6 +98,7 @@ function loaddensdata(SampleStart,SampleEnd,K,nfVARSpec,v)
         end
     end
 
-    return PhatDensCoef_factor, MDD_GoF, VinvLam_all, period_Dens_ind, PhatDensCoef_lambda, PhatDensCoef_mean, PhatDensCoef_mean_allt
+    return PhatDensCoef_factor, MDD_GoF, VinvLam_all, period_Dens_ind, PhatDensCoef_lambda, PhatDensCoef_mean #, PhatDensCoef_mean_allt
 
 end
+
